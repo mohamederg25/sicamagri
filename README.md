@@ -326,6 +326,10 @@ sudo nano /etc/apache2/sites-available/winicari.tn.conf
         FallbackResource /index.html
     </Directory>
 
+    # ── Sécurité du proxy ──
+    ProxyRequests Off
+    ProxyVia On
+
     # ── Reverse Proxy vers l'API Node.js ──
     ProxyPreserveHost On
     ProxyPass /api/ http://localhost:5000/api/
