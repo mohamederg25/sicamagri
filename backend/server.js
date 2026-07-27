@@ -45,7 +45,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       imgSrc: ["'self'", 'data:', 'blob:'],
-      connectSrc: ["'self'", 'http://localhost:5000', 'ws://localhost:5000'],
+      connectSrc: ["'self'", 'http://localhost:5000', 'ws://localhost:5000', 'https://www.winicari.tn', 'ws://www.winicari.tn'],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
     },
   },
@@ -65,9 +65,13 @@ app.use('/api/', limiter);
 //  Body size limit — prevent payload too large
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());          // Parse httpOnly cookies (token retrieval for auth)
+const corsOrigins = process.env.NODE_ENV === 'production'
+  ? ['https://www.winicari.tn', 'http://www.winicari.tn']
+  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],   // Vite dev servers
-  credentials: true               // Allow cookies in cross-origin requests
+  origin: corsOrigins,
+  credentials: true
 }));
 
 //  Cache Control — disable caching for API responses by default

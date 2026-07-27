@@ -254,20 +254,157 @@ sicamagri/
 
 ## ☁️ Déploiement
 
-### Option 1 : Render (recommandé)
+### Option 1 : Apache / Serveur Ubuntu (recommandé pour votre serveur)
+
+Ce guide est optimisé pour votre serveur **Apache/2.4.58 (Ubuntu)** sur `www.winicari.tn`.
+
+#### Architecture
+
+```
+Utilisateur ──► Apache (port 80/443)
+                   │
+                   ├───► / (fichiers statiques React depuis frontend/dist/)
+                   │
+                   └───► /api/* ──► Reverse Proxy ──► Node.js (port 5000)
+                   └───► /socket.io/* ──► Reverse Proxy WebSocket ──► Node.js (port 5000)
+                                                   │
+                                                   └───► MongoDB (local ou Atlas)
+```
+
+#### 1. Installer Node.js et PM2 sur le serveur
+
+```bash
+# Node.js 18+
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# PM2 (gestionnaire de processus)
+sudo npm install -g pm2
+```
+
+#### 2. Cloner le projet et installer les dépendances
+
+```bash
+cd /var/www
+sudo git clone https://github.com/mohamederg25/sicamagri.git
+cd sicamagri
+
+# Backend
+cd backend
+npm install --production
+cp .env.example .env
+nano .env   # Configurer MONGO_URI, JWT_SECRET, NODE_ENV=production
+
+# Frontend - build
+cd ../frontend
+npm install
+npm run build    # Génère le dossier frontend/dist/
+```
+
+#### 3. Configurer Apache (VirtualHost)
+
+Créez un fichier de configuration Apache :
+
+```apache
+sudo nano /etc/apache2/sites-available/winicari.tn.conf
+```
+
+```apache
+<VirtualHost *:80>
+    ServerName www.winicari.tn
+    ServerAdmin admin@winicari.tn
+
+    # ── Frontend (fichiers statiques React) ──
+    DocumentRoot /var/www/sicamagri/frontend/dist
+
+    <Directory /var/www/sicamagri/frontend/dist>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+        
+        # React Router — rediriger toutes les routes vers index.html
+        FallbackResource /index.html
+    </Directory>
+
+    # ── Reverse Proxy vers l'API Node.js ──
+    ProxyPreserveHost On
+    ProxyPass /api/ http://localhost:5000/api/
+    ProxyPassReverse /api/ http://localhost:5000/api/
+
+    # ── WebSocket (Socket.IO) ──
+    ProxyPass /socket.io/ ws://localhost:5000/socket.io/
+    ProxyPassReverse /socket.io/ ws://localhost:5000/socket.io/
+
+    # ── Logs ──
+    ErrorLog ${APACHE_LOG_DIR}/winicari-error.log
+    CustomLog ${APACHE_LOG_DIR}/winicari-access.log combined
+</VirtualHost>
+```
+
+Activez le site et les modules nécessaires :
+
+```bash
+# Activer les modules Apache nécessaires
+sudo a2enmod proxy
+sudo a2enmod proxy_http
+sudo a2enmod proxy_wstunnel  # Pour WebSocket
+sudo a2enmod rewrite
+
+# Activer le site
+sudo a2ensite winicari.tn.conf
+sudo systemctl reload apache2
+```
+
+#### 4. Lancer le backend avec PM2
+
+```bash
+cd /var/www/sicamagri/backend
+pm2 start server.js --name sicamagri-api
+pm2 save
+pm2 startup   # Redémarrage automatique au boot
+```
+
+#### 5. Configurer MongoDB
+
+**Option A : MongoDB local**
+```bash
+# Installer MongoDB sur Ubuntu
+curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] http://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+sudo apt-get update
+sudo apt-get install -y mongodb-org
+sudo systemctl start mongod
+sudo systemctl enable mongod
+```
+
+**Option B : MongoDB Atlas (cloud, gratuit)**
+- Créez un cluster gratuit sur [MongoDB Atlas](https://www.mongodb.com/atlas)
+- Ajoutez l'adresse IP de votre serveur dans Network Access
+- Utilisez l'URI de connexion dans votre `.env`
+
+#### 6. Ajouter HTTPS (Let's Encrypt)
+
+```bash
+sudo apt-get install -y certbot python3-certbot-apache
+sudo certbot --apache -d www.winicari.tn
+```
+
+---
+
+### Option 2 : Render (alternative simplifiée)
 
 1. Créez un compte sur [Render](https://render.com)
 2. Connectez votre dépôt GitHub
 3. Créez un **Web Service** pour le backend :
    - Build Command : `cd backend && npm install`
    - Start Command : `cd backend && npm start`
-   - Ajoutez les variables d'environnement (cf. section [Variables](#-variables-denvironnement))
+   - Ajoutez les variables d'environnement
 4. Créez un **Static Site** pour le frontend :
    - Build Command : `cd frontend && npm install && npm run build`
    - Publish Directory : `frontend/dist`
 5. Créez une base de données **MongoDB Atlas** (gratuit) et utilisez l'URI dans `MONGO_URI`
 
-### Option 2 : VPS / Serveur dédié
+### Option 3 : VPS / Serveur dédié simple
 
 ```bash
 # Installer les dépendances
@@ -278,9 +415,9 @@ cd ../frontend && npm install && npm run build
 npm install -g pm2
 cd ../backend
 pm2 start server.js --name sicamagri-api
+pm2 save
+pm2 startup
 ```
-
-### Option 3 : Docker (à venir)
 
 ---
 
