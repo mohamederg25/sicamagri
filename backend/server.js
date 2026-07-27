@@ -40,7 +40,16 @@ const app = express();
 //  Security & Performance Middleware 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin images/fonts
-  contentSecurityPolicy: false, // Désactivé pour permettre le cross-origin API/WebSocket
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+      connectSrc: ["'self'", 'ws://*', 'http://*', 'https://*'],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+    },
+  },
 }));
 app.use(compression());               // Gzip compress all responses
 

@@ -27,7 +27,7 @@ const getSocketUrl = () => {
   if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
   if (import.meta.env.PROD) {
     const hostname = window.location.hostname;
-    return `http://${hostname}:5000`;
+    return `${window.location.protocol}//${hostname}:5000`;
   }
   return 'http://localhost:5000';
 };
