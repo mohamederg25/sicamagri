@@ -8,21 +8,52 @@ Application web pour la gestion des pépinières : semis, lots, tests germinatio
 
 ## 🚀 Installation rapide (local)
 
+### Option 1 : Windows — double-clic sur `Start-Project.bat`
 ```bash
 # 1. Cloner
-git clone https://github.com/mohamederg25/sicamagri.git
-cd sicamagri
+ git clone https://github.com/mohamederg25/sicamagri.git
+ cd sicamagri
+
+# 2. Installer les dépendances
+ cd backend && npm install
+ cd ../frontend && npm install
+
+# 3. Lancer tout (double-clic ou terminal)
+ Start-Project.bat
+```
+→ Ouvre automatiquement http://localhost:5173
+
+### Option 2 : Linux/macOS — `./start.sh --dev`
+```bash
+# 1. Cloner
+ git clone https://github.com/mohamederg25/sicamagri.git
+ cd sicamagri
+
+# 2. Installer les dépendances
+ cd backend && npm install
+ cd ../frontend && npm install
+
+# 3. Lancer tout
+ ./start.sh --dev
+```
+→ Ouvre automatiquement http://localhost:5173
+
+### Option 3 : Manuel (tout OS)
+```bash
+# 1. Cloner
+ git clone https://github.com/mohamederg25/sicamagri.git
+ cd sicamagri
 
 # 2. Backend
-cd backend
-npm install
-npm run seed        # Crée les données de démo
-npm run dev         # http://localhost:5000
+ cd backend
+ npm install
+ npm run seed        # Crée les données de démo
+ npm run dev         # http://localhost:5000
 
 # 3. Frontend (autre terminal)
-cd frontend
-npm install
-npm run dev         # http://localhost:5173
+ cd frontend
+ npm install
+ npm run dev         # http://localhost:5173
 ```
 
 ### Identifiants de connexion
