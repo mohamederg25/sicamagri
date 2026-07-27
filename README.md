@@ -254,21 +254,22 @@ sicamagri/
 
 ## ☁️ Déploiement
 
-### Option 1 : Apache / Serveur Ubuntu (recommandé pour votre serveur)
+### Option 1 : Apache / Serveur Ubuntu — Sous-dossier `/sicam`
 
-Ce guide est optimisé pour votre serveur **Apache/2.4.58 (Ubuntu)** sur `www.winicari.tn`.
+Ce guide est optimisé pour votre serveur **Apache/2.4.58 (Ubuntu)** où l'application sera accessible via `www.winicari.tn/sicam`.
 
 #### Architecture
 
 ```
-Utilisateur ──► Apache (port 80/443)
+Utilisateur ──► Apache (port 80)
                    │
-                   ├───► / (fichiers statiques React depuis frontend/dist/)
+                   ├───► www.winicari.tn/ (site existant)
                    │
-                   └───► /api/* ──► Reverse Proxy ──► Node.js (port 5000)
-                   └───► /socket.io/* ──► Reverse Proxy WebSocket ──► Node.js (port 5000)
-                                                   │
-                                                   └───► MongoDB (local ou Atlas)
+                   └───► /sicam/ (fichiers statiques React depuis frontend/dist/)
+                   └───► /sicam/api/* ──► Reverse Proxy ──► Node.js (port 5000)
+                   └───► /sicam/socket.io/* ──► WebSocket Proxy ──► Node.js (port 5000)
+                                                              │
+                                                              └───► MongoDB
 ```
 
 #### 1. Installer Node.js et PM2 sur le serveur
@@ -282,80 +283,68 @@ sudo apt-get install -y nodejs
 sudo npm install -g pm2
 ```
 
-#### 2. Cloner le projet et installer les dépendances
+#### 2. Cloner le projet et builder le frontend
 
 ```bash
 cd /var/www
 sudo git clone https://github.com/mohamederg25/sicamagri.git
 cd sicamagri
 
-# Backend
+# Backend - installer les dépendances
 cd backend
 npm install --production
 cp .env.example .env
 nano .env   # Configurer MONGO_URI, JWT_SECRET, NODE_ENV=production
 
-# Frontend - build
+# Frontend - build (base=/sicam/ automatiquement)
 cd ../frontend
 npm install
-npm run build    # Génère le dossier frontend/dist/
+npm run build    # Génère frontend/dist/ avec chemins /sicam/
 ```
 
-#### 3. Configurer Apache (VirtualHost)
+#### 3. Ajouter la configuration Apache pour `/sicam`
 
-Créez un fichier de configuration Apache :
+Éditez le fichier VirtualHost existant de `www.winicari.tn` :
 
-```apache
-sudo nano /etc/apache2/sites-available/winicari.tn.conf
+```bash
+# Trouver le fichier de configuration actuel
+sudo apache2ctl -S | grep winicari
+sudo nano /etc/apache2/sites-available/winicari.tn.conf  # ou le chemin trouvé
 ```
 
+**Ajoutez ces directives DANS le `<VirtualHost *:80>` existant :**
+
 ```apache
-<VirtualHost *:80>
-    ServerName www.winicari.tn
-    ServerAdmin admin@winicari.tn
-
-    # ── Frontend (fichiers statiques React) ──
-    DocumentRoot /var/www/sicamagri/frontend/dist
-
+    # ── SICAM AGRI - sous-dossier /sicam ──
+    Alias /sicam /var/www/sicamagri/frontend/dist
     <Directory /var/www/sicamagri/frontend/dist>
         Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
-        
-        # React Router — rediriger toutes les routes vers index.html
-        FallbackResource /index.html
     </Directory>
 
-    # ── Sécurité du proxy ──
-    ProxyRequests Off
-    ProxyVia On
+    # ── React Router - toutes les routes internes → index.html ──
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^/sicam/ /sicam/index.html [L]
 
     # ── Reverse Proxy vers l'API Node.js ──
+    ProxyRequests Off
+    ProxyVia On
     ProxyPreserveHost On
-    ProxyPass /api/ http://localhost:5000/api/
-    ProxyPassReverse /api/ http://localhost:5000/api/
+    ProxyPass /sicam/api/ http://localhost:5000/api/
+    ProxyPassReverse /sicam/api/ http://localhost:5000/api/
 
     # ── WebSocket (Socket.IO) ──
-    ProxyPass /socket.io/ ws://localhost:5000/socket.io/
-    ProxyPassReverse /socket.io/ ws://localhost:5000/socket.io/
-
-    # ── Logs ──
-    ErrorLog ${APACHE_LOG_DIR}/winicari-error.log
-    CustomLog ${APACHE_LOG_DIR}/winicari-access.log combined
-</VirtualHost>
+    ProxyPass /sicam/socket.io/ ws://localhost:5000/socket.io/
+    ProxyPassReverse /sicam/socket.io/ ws://localhost:5000/socket.io/
 ```
 
-Activez le site et les modules nécessaires :
+Activez les modules nécessaires si pas déjà fait :
 
 ```bash
-# Activer les modules Apache nécessaires
-sudo a2enmod proxy
-sudo a2enmod proxy_http
-sudo a2enmod proxy_wstunnel  # Pour WebSocket
-sudo a2enmod rewrite
-
-# Activer le site
-sudo a2ensite winicari.tn.conf
+sudo a2enmod proxy proxy_http proxy_wstunnel rewrite alias
 sudo systemctl reload apache2
 ```
 
@@ -363,6 +352,7 @@ sudo systemctl reload apache2
 
 ```bash
 cd /var/www/sicamagri/backend
+npm install -g pm2  # si pas déjà installé
 pm2 start server.js --name sicamagri-api
 pm2 save
 pm2 startup   # Redémarrage automatique au boot
