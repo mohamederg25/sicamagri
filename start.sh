@@ -64,12 +64,40 @@ else
     [ ! -d "$FRONTEND_DIR/node_modules" ] && cd "$FRONTEND_DIR" && npm install
     command -v pm2 &>/dev/null || npm install -g pm2
 
-    echo -e "${GREEN}[2/3] Build du frontend...${NC}"
+    echo -e "${GREEN}[2/4] Seed de la base de données...${NC}"
+    cd "$BACKEND_DIR"
+    # Vérifier si la base est déjà seedée (si admin existe, on ne seed pas)
+    node -e "
+      const mongoose = require('mongoose');
+      require('dotenv').config();
+      mongoose.connect(process.env.MONGO_URI).then(async () => {
+        const User = require('./models/User');
+        const admin = await User.findOne({ email: 'admin@test.com' });
+        if (!admin) {
+          console.log('Premier lancement — Seed de la base...');
+          await mongoose.disconnect();
+          process.exit(42);  // Code spécial : seed nécessaire
+        } else {
+          console.log('✓ Base déjà initialisée');
+          await mongoose.disconnect();
+          process.exit(0);
+        }
+      }).catch(e => { console.error(e); process.exit(1); });
+    " 2>&1 | tail -1
+    SEED_EXIT_CODE=$?
+    if [ $SEED_EXIT_CODE -eq 42 ]; then
+        echo -e "${YELLOW}Création des données initiales...${NC}"
+        cd "$BACKEND_DIR" && node scripts/seed.js
+        echo -e "${GREEN}✓ Base de données initialisée avec succès${NC}"
+    fi
+    echo ""
+
+    echo -e "${GREEN}[3/4] Build du frontend...${NC}"
     cd "$FRONTEND_DIR" && npm run build
     echo -e "${GREEN}✓ Frontend build OK${NC}"
     echo ""
 
-    echo -e "${GREEN}[3/3] Démarrage du backend (port 3000)...${NC}"
+    echo -e "${GREEN}[4/4] Démarrage du backend (port 3000)...${NC}"
     cd "$BACKEND_DIR"
     if pm2 list 2>/dev/null | grep -q "sicamagri-api"; then
         pm2 restart sicamagri-api --env production
