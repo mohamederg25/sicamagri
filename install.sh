@@ -2,7 +2,7 @@
 
 # ── SICAM AGRI — Install Script ──
 # Usage : sudo ./install.sh
-# Exécutez avec sudo pour installer Node.js + MongoDB
+# Installe Node.js 18+ et MongoDB sur Ubuntu
 
 set -e
 
@@ -17,7 +17,7 @@ echo -e "${CYAN}   SICAM AGRI — Installation serveur   ${NC}"
 echo -e "${CYAN}═══════════════════════════════════════${NC}"
 echo ""
 
-# ── Vérifier qu'on est bien root/sudo ──
+# ── Vérifier sudo ──
 if [ "$EUID" -ne 0 ]; then
     echo -e "${RED}Erreur : veuillez exécuter avec sudo${NC}"
     echo -e "${YELLOW}Utilisez : sudo ./install.sh${NC}"
@@ -30,19 +30,21 @@ if [ ! -f /etc/os-release ]; then
     exit 1
 fi
 . /etc/os-release
-echo -e "${GREEN}Système détecté : $NAME $VERSION${NC}"
+echo -e "${GREEN}Système : $NAME $VERSION${NC}"
 echo ""
 
-# ── 1. Mise à jour des paquets ──
-echo -e "${YELLOW}[1/4] Mise à jour des paquets...${NC}"
+# ── 1. Prérequis ──
+echo -e "${YELLOW}[1/5] Installation des prérequis (curl, gnupg)...${NC}"
 apt-get update -y
-echo -e "${GREEN}✓ Paquets mis à jour${NC}"
+apt-get install -y curl gnupg
+echo -e "${GREEN}✓ Prérequis installés${NC}"
 echo ""
 
-# ── 2. Installation de Node.js 18 ──
-echo -e "${YELLOW}[2/4] Installation de Node.js 18...${NC}"
-if command -v node &> /dev/null; then
-    echo -e "${GREEN}✓ Node.js déjà installé : $(node --version)${NC}"
+# ── 2. Node.js 18+ ──
+echo -e "${YELLOW}[2/5] Installation de Node.js 18...${NC}"
+NODE_MAJOR=$(node -v 2>/dev/null | cut -d'v' -f2 | cut -d'.' -f1 || echo "0")
+if [ "$NODE_MAJOR" -ge 18 ]; then
+    echo -e "${GREEN}✓ Node.js $(node --version) déjà installé${NC}"
 else
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
     apt-get install -y nodejs
@@ -50,44 +52,60 @@ else
 fi
 echo ""
 
-# ── 3. Installation de MongoDB 7.0 ──
-echo -e "${YELLOW}[3/4] Installation de MongoDB 7.0...${NC}"
-if command -v mongod &> /dev/null; then
-    echo -e "${GREEN}✓ MongoDB déjà installé : $(mongod --version 2>&1 | head -1)${NC}"
+# ── 3. MongoDB ──
+echo -e "${YELLOW}[3/5] Installation de MongoDB...${NC}"
+if command -v mongod &> /dev/null && systemctl is-active --quiet mongod; then
+    echo -e "${GREEN}✓ MongoDB $(mongod --version 2>&1 | head -1) déjà installé et actif${NC}"
 else
-    # Importer la clé GPG
-    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \
-        gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor 2>/dev/null || true
-    
-    # Ajouter le dépôt selon la version d'Ubuntu
-    UBUNTU_VERSION=$(lsb_release -cs 2>/dev/null || echo "jammy")
-    echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] http://repo.mongodb.org/apt/ubuntu ${UBUNTU_VERSION}/mongodb-org/7.0 multiverse" | \
-        tee /etc/apt/sources.list.d/mongodb-org-7.0.list
-    
+    # Déterminer la version MongoDB selon Ubuntu
+    UBUNTU_CODENAME="${VERSION_CODENAME:-jammy}"
+    MONGO_VERSION="7.0"
+    # Ubuntu 24.04+ nécessite MongoDB 8.0
+    if [ "$UBUNTU_CODENAME" = "noble" ] || [ "$UBUNTU_CODENAME" = "oracular" ]; then
+        MONGO_VERSION="8.0"
+    fi
+
+    # Clé GPG
+    curl -fsSL "https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc" | \
+        gpg --dearmor -o /usr/share/keyrings/mongodb-server-${MONGO_VERSION}.gpg
+
+    # Dépôt APT
+    echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-${MONGO_VERSION}.gpg ] http://repo.mongodb.org/apt/ubuntu ${UBUNTU_CODENAME}/mongodb-org/${MONGO_VERSION} multiverse" | \
+        tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
+
     apt-get update -y
     apt-get install -y mongodb-org
-    
-    # Démarrer MongoDB
+
     systemctl start mongod
     systemctl enable mongod
-    
-    echo -e "${GREEN}✓ MongoDB 7.0 installé et démarré${NC}"
+    echo -e "${GREEN}✓ MongoDB ${MONGO_VERSION} installé et démarré${NC}"
 fi
 echo ""
 
-# ── 4. Vérification finale ──
-echo -e "${YELLOW}[4/4] Vérification...${NC}"
+# ── 4. PM2 ──
+echo -e "${YELLOW}[4/5] Installation de PM2...${NC}"
+if command -v pm2 &> /dev/null; then
+    echo -e "${GREEN}✓ PM2 déjà installé${NC}"
+else
+    npm install -g pm2
+    echo -e "${GREEN}✓ PM2 installé${NC}"
+fi
+echo ""
+
+# ── 5. Vérification ──
+echo -e "${YELLOW}[5/5] Vérification finale...${NC}"
 echo ""
 echo -e "${CYAN}═══════════════════════════════════════${NC}"
 echo -e "${CYAN}   État des services                  ${NC}"
 echo -e "${CYAN}═══════════════════════════════════════${NC}"
 echo -e "Node.js  : $(node --version)"
 echo -e "npm      : $(npm --version)"
+echo -e "PM2      : $(pm2 --version 2>/dev/null || echo '✓ installé')"
 systemctl is-active --quiet mongod && echo -e "MongoDB  : ${GREEN}✓ actif${NC}" || echo -e "MongoDB  : ${RED}✗ inactif${NC}"
 echo ""
 
 echo -e "${GREEN}═══════════════════════════════════════${NC}"
-echo -e "${GREEN}   Installation terminée avec succès ! ${NC}"
+echo -e "${GREEN}   Installation terminée !             ${NC}"
 echo -e "${GREEN}═══════════════════════════════════════${NC}"
 echo ""
 echo -e "Prochaine étape :"
