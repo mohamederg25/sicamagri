@@ -45,7 +45,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       imgSrc: ["'self'", 'data:', 'blob:'],
-      connectSrc: ["'self'", 'http://localhost:5000', 'ws://localhost:5000', 'https://www.winicari.tn', 'ws://www.winicari.tn'],
+      connectSrc: ["'self'", 'http://localhost:5000', 'ws://localhost:5000'],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
     },
   },
@@ -65,12 +65,14 @@ app.use('/api/', limiter);
 //  Body size limit — prevent payload too large
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());          // Parse httpOnly cookies (token retrieval for auth)
-const corsOrigins = process.env.NODE_ENV === 'production'
-  ? ['https://www.winicari.tn', 'http://www.winicari.tn']
+// CORS : mettre l'URL de production dans la variable d'env CORS_ORIGIN
+// Exemple : CORS_ORIGIN=https://mon-site.com,https://www.monsite.tn
+const corsOrigin = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
   : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
 
 app.use(cors({
-  origin: corsOrigins,
+  origin: corsOrigin,
   credentials: true
 }));
 

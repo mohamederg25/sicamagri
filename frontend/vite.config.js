@@ -4,9 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-  // Base path: /sicam/ en production (sous Apache), / en développement (Vite)
-  base: mode === 'production' ? '/sicam/' : '/',
-
   plugins: [
     react(),
     tailwindcss(),

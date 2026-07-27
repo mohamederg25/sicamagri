@@ -254,133 +254,108 @@ sicamagri/
 
 ## ☁️ Déploiement
 
-### Option 1 : Apache / Serveur Ubuntu — Sous-dossier `/sicam`
-
-Ce guide est optimisé pour votre serveur **Apache/2.4.58 (Ubuntu)** où l'application sera accessible via `www.winicari.tn/sicam`.
+### Option 1 : Apache / Serveur Ubuntu (Reverse Proxy)
 
 #### Architecture
 
 ```
-Utilisateur ──► Apache (port 80)
+Utilisateur ──► Apache (port 80/443)
                    │
-                   ├───► www.winicari.tn/ (site existant)
+                   ├───► / (fichiers statiques React depuis frontend/dist/)
                    │
-                   └───► /sicam/ (fichiers statiques React depuis frontend/dist/)
-                   └───► /sicam/api/* ──► Reverse Proxy ──► Node.js (port 5000)
-                   └───► /sicam/socket.io/* ──► WebSocket Proxy ──► Node.js (port 5000)
-                                                              │
-                                                              └───► MongoDB
+                   └───► /api/* ──► Reverse Proxy ──► Node.js (port 5000)
+                   └───► /socket.io/* ──► Proxy WebSocket ──► Node.js (port 5000)
+                                                             │
+                                                             └───► MongoDB
 ```
 
-#### 1. Installer Node.js et PM2 sur le serveur
+#### 1. Installer Node.js et PM2
 
 ```bash
-# Node.js 18+
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
-
-# PM2 (gestionnaire de processus)
 sudo npm install -g pm2
 ```
 
-#### 2. Cloner le projet et builder le frontend
+#### 2. Cloner et builder
 
 ```bash
 cd /var/www
 sudo git clone https://github.com/mohamederg25/sicamagri.git
 cd sicamagri
 
-# Backend - installer les dépendances
+# Backend
 cd backend
 npm install --production
 cp .env.example .env
-nano .env   # Configurer MONGO_URI, JWT_SECRET, NODE_ENV=production
+nano .env   # Configurer MONGO_URI, JWT_SECRET, CORS_ORIGIN, NODE_ENV=production
 
-# Frontend - build (base=/sicam/ automatiquement)
+# Frontend
 cd ../frontend
 npm install
-npm run build    # Génère frontend/dist/ avec chemins /sicam/
+npm run build    # Génère frontend/dist/
 ```
 
-#### 3. Ajouter la configuration Apache pour `/sicam`
+#### 3. Configurer Apache
 
-Éditez le fichier VirtualHost existant de `www.winicari.tn` :
-
-```bash
-# Trouver le fichier de configuration actuel
-sudo apache2ctl -S | grep winicari
-sudo nano /etc/apache2/sites-available/winicari.tn.conf  # ou le chemin trouvé
-```
-
-**Ajoutez ces directives DANS le `<VirtualHost *:80>` existant :**
+Créez ou modifiez le VirtualHost :
 
 ```apache
-    # ── SICAM AGRI - sous-dossier /sicam ──
-    Alias /sicam /var/www/sicamagri/frontend/dist
+<VirtualHost *:80>
+    ServerName votre-domaine.tn
+    DocumentRoot /var/www/sicamagri/frontend/dist
+
     <Directory /var/www/sicamagri/frontend/dist>
         Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
+        FallbackResource /index.html        # React Router
     </Directory>
 
-    # ── React Router - toutes les routes internes → index.html ──
-    RewriteEngine On
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^/sicam/ /sicam/index.html [L]
-
-    # ── Reverse Proxy vers l'API Node.js ──
+    # Reverse Proxy vers Node.js
     ProxyRequests Off
-    ProxyVia On
     ProxyPreserveHost On
-    ProxyPass /sicam/api/ http://localhost:5000/api/
-    ProxyPassReverse /sicam/api/ http://localhost:5000/api/
+    ProxyPass /api/ http://localhost:5000/api/
+    ProxyPassReverse /api/ http://localhost:5000/api/
 
-    # ── WebSocket (Socket.IO) ──
-    ProxyPass /sicam/socket.io/ ws://localhost:5000/socket.io/
-    ProxyPassReverse /sicam/socket.io/ ws://localhost:5000/socket.io/
+    # WebSocket
+    ProxyPass /socket.io/ ws://localhost:5000/socket.io/
+    ProxyPassReverse /socket.io/ ws://localhost:5000/socket.io/
+
+    ErrorLog ${APACHE_LOG_DIR}/sicamagri-error.log
+    CustomLog ${APACHE_LOG_DIR}/sicamagri-access.log combined
+</VirtualHost>
 ```
 
-Activez les modules nécessaires si pas déjà fait :
-
 ```bash
-sudo a2enmod proxy proxy_http proxy_wstunnel rewrite alias
+sudo a2enmod proxy proxy_http proxy_wstunnel rewrite
+sudo a2ensite votre-domaine.tn.conf
 sudo systemctl reload apache2
 ```
 
-#### 4. Lancer le backend avec PM2
+#### 4. Lancer le backend
 
 ```bash
 cd /var/www/sicamagri/backend
-npm install -g pm2  # si pas déjà installé
-pm2 start server.js --name sicamagri-api
-pm2 save
-pm2 startup   # Redémarrage automatique au boot
+pm2 start server.js --name sicamagri-api --env production
+pm2 save && pm2 startup
 ```
 
-#### 5. Configurer MongoDB
+#### 5. MongoDB
 
-**Option A : MongoDB local**
+**Local :**
 ```bash
-# Installer MongoDB sur Ubuntu
-curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
-echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] http://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
-sudo apt-get update
 sudo apt-get install -y mongodb-org
-sudo systemctl start mongod
-sudo systemctl enable mongod
+sudo systemctl start mongod && sudo systemctl enable mongod
 ```
 
-**Option B : MongoDB Atlas (cloud, gratuit)**
-- Créez un cluster gratuit sur [MongoDB Atlas](https://www.mongodb.com/atlas)
-- Ajoutez l'adresse IP de votre serveur dans Network Access
-- Utilisez l'URI de connexion dans votre `.env`
+**Atlas (gratuit) :** Créez un cluster sur [MongoDB Atlas](https://www.mongodb.com/atlas)
 
-#### 6. Ajouter HTTPS (Let's Encrypt)
+#### 6. HTTPS (Let's Encrypt)
 
 ```bash
 sudo apt-get install -y certbot python3-certbot-apache
-sudo certbot --apache -d www.winicari.tn
+sudo certbot --apache -d votre-domaine.tn
 ```
 
 ---
