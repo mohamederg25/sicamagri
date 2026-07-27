@@ -73,17 +73,9 @@ else
       mongoose.connect(process.env.MONGO_URI).then(async () => {
         const User = require('./models/User');
         const admin = await User.findOne({ email: 'admin@test.com' });
-        if (!admin) {
-          console.log('Premier lancement — Seed de la base...');
-          await mongoose.disconnect();
-          process.exit(42);  // Code spécial : seed nécessaire
-        } else {
-          console.log('✓ Base déjà initialisée');
-          await mongoose.disconnect();
-          process.exit(0);
-        }
-      }).catch(e => { console.error(e); process.exit(1); });
-    " 2>&1 | tail -1
+        process.exit(admin ? 0 : 42);
+      });
+    "
     SEED_EXIT_CODE=$?
     if [ $SEED_EXIT_CODE -eq 42 ]; then
         echo -e "${YELLOW}Création des données initiales...${NC}"
