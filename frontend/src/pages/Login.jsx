@@ -19,7 +19,7 @@ const Login = () => {
       navigate('/dashboard');
     } catch (err) {
       if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-        setError('Impossible de se connecter au serveur. Vérifiez que le backend est démarré et que le port est correct (3000 en local). Consultez la console F12 pour plus de détails.');
+        setError('Impossible de se connecter au serveur. Vérifiez que le backend est démarré et que le port est correct (5000 en local). Consultez la console F12 pour plus de détails.');
       } else if (err.response?.status === 401) {
         setError('Email ou mot de passe invalide');
       } else {
