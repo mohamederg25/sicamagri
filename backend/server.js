@@ -40,16 +40,7 @@ const app = express();
 //  Security & Performance Middleware 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin images/fonts
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'blob:'],
-      connectSrc: ["'self'", 'http://localhost:5000', 'ws://localhost:5000'],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-    },
-  },
+  contentSecurityPolicy: false, // Désactivé pour permettre le cross-origin API/WebSocket
 }));
 app.use(compression());               // Gzip compress all responses
 
@@ -66,15 +57,16 @@ app.use('/api/', limiter);
 //  Body size limit — prevent payload too large
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());          // Parse httpOnly cookies (token retrieval for auth)
-// CORS : mettre l'URL de production dans la variable d'env CORS_ORIGIN
-// Exemple : CORS_ORIGIN=https://mon-site.com,https://www.monsite.tn
-const corsOrigin = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
-  : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
-
+// CORS : accepte TOUTES les origines avec credentials
+// En production, le frontend et le backend sont souvent sur des ports/domaines différents
+// Avec credentials: true, le navigateur n'accepte PAS wildcard (*), on renvoie l'origine exacte
 app.use(cors({
-  origin: corsOrigin,
-  credentials: true
+  origin: function (origin, callback) {
+    // Permet les requêtes sans origin (curl, mobile apps, etc.)
+    if (!origin) return callback(null, true);
+    callback(null, origin); // Accepte n'importe quelle origine
+  },
+  credentials: true,
 }));
 
 //  Cache Control — disable caching for API responses by default

@@ -19,7 +19,20 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { playCriticalAlert, playWarningAlert } from '../utils/notificationSound';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
+// Détection automatique de l'URL du WebSocket
+// 1. VITE_SOCKET_URL si défini (build-time)
+// 2. En production: utilise le même hostname que la page mais sur le port 5000
+// 3. En dev: localhost:5000
+const getSocketUrl = () => {
+  if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
+  if (import.meta.env.PROD) {
+    const hostname = window.location.hostname;
+    return `http://${hostname}:5000`;
+  }
+  return 'http://localhost:5000';
+};
+
+const SOCKET_URL = getSocketUrl();
 
 /* ── Save original page title on first import ── */
 const ORIGINAL_TITLE = document.title;
