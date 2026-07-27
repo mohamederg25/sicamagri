@@ -1,0 +1,241 @@
+/**
+ * Global Styles — SICAM Pépinière
+ * ================================
+ * Brand palette applied as CSS custom properties.
+ */
+
+/* ── Poppins Font (Google Fonts) ── */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
+/* ── Reset & Base ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Poppins', 'Inter', 'Segoe UI', sans-serif;
+  background: #F0F7F0;
+  color: #111111;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Brand CSS Custom Properties ── */
+:root {
+  /* 🔴 Brand Reds */
+  --bright-red:       #D50010;
+  --primary:          #B02020;
+  --primary-dark:     #8A1A1A;
+  --primary-light:    #E85050;
+
+  /* 🟢 Brand Greens */
+  --secondary:         #008030;
+  --secondary-dark:    #006625;
+  --secondary-light:   #00AA40;
+
+  /* 🟨 Brand Yellow */
+  --accent:           #F0E050;
+  --accent-dark:      #D4C020;
+
+  /* ⚪ Neutrals */
+  --bg:               #F0F7F0;
+  --text:             #111111;
+  --text-light:       #1a1a1a;
+  --text-muted:       #222222;
+  --text-subtle:      #374151;
+  --border:           #E5E7EB;
+  --border-light:     #F3F4F6;
+  --white:            #FFFFFF;
+  --sidebar-bg:       #F4F4F5;
+  --sidebar-text:     #222222;
+
+  /* 🏷 Semantic */
+  --success:          #008030;
+  --success-bg:       #E8F5E9;
+  --warning:          #D4C020;
+  --warning-bg:       #FFF8E1;
+  --danger:           #B02020;
+  --danger-bg:        #FFEBEE;
+  --info:             #1565C0;
+  --info-bg:          #E3F2FD;
+}
+
+/* ── Links ── */
+a {
+  color: var(--secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+a:hover {
+  color: var(--secondary-dark);
+}
+
+/* ── Scrollbar (Webkit) ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ── Dark scrollbar variant (for dark sections) ── */
+.dark-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+}
+.dark-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.40);
+}
+.dark-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+.dark-scroll {
+  scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.08);
+}
+
+/* ── Screen Reader Only ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Spin animation for loading spinners ── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Table scroll wrapper ── */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Classic Table Mode — style extrait du PDF Pépinières (Helvetica, rouge #B02020) ── */
+.classic-table table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+  font-family: Helvetica, Arial, 'sans-serif' !important;
+  font-size: 14px !important;
+  border: 1px solid #C7CCD1 !important;
+}
+
+.classic-table table thead th {
+  background: #B02020 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  font-size: 13px !important;
+  padding: 11px 16px !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  border: 1px solid #8C1414 !important;
+}
+
+.classic-table table tbody td {
+  padding: 10px 16px !important;
+  border: 1px solid #D1D6DB !important;
+  color: #282D32 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  vertical-align: middle !important;
+  background-color: #ffffff !important;
+}
+
+.classic-table table tbody tr:nth-child(even) td {
+  background-color: #F7FAFA !important;
+}
+
+.classic-table table tbody td span {
+  color: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  background: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* ── Classic buttons — style cool : rouge avec ombre, remplissage au survol ── */
+.classic-table table tbody td a,
+.classic-table table tbody td button {
+  font-family: Helvetica, Arial, 'sans-serif' !important;
+  font-size: 12px !important;
+  padding: 6px 18px !important;
+  border: 1px solid #B02020 !important;
+  background: #B02020 !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+  text-decoration: none !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 6px rgba(176,32,32,0.2) !important;
+  transition: all 0.2s ease !important;
+  min-width: 70px !important;
+}
+
+.classic-table table tbody td a:hover,
+.classic-table table tbody td button:hover {
+  background: #8A1A1A !important;
+  border-color: #8A1A1A !important;
+  box-shadow: 0 4px 12px rgba(176,32,32,0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+.classic-table table tbody td a:active,
+.classic-table table tbody td button:active {
+  background: #6B1414 !important;
+  box-shadow: 0 1px 3px rgba(176,32,32,0.2) !important;
+  transform: translateY(0px) !important;
+}
+
+/* ── Classic container — sans bordure ni ombre, la table a sa propre bordure ── */
+.classic-table {
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.classic-table .table-scroll {
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+/* ── Print ── */
+@media print {
+  body {
+    background: white;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
