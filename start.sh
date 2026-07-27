@@ -26,23 +26,20 @@ echo ""
 if [ "${1:-}" = "--dev" ]; then
     echo -e "${YELLOW}Mode Développement — localhost${NC}"
 
-    # Installer les dépendances
     [ ! -d "$BACKEND_DIR/node_modules" ] && cd "$BACKEND_DIR" && npm install
     [ ! -d "$FRONTEND_DIR/node_modules" ] && cd "$FRONTEND_DIR" && npm install
 
-    # Backend
     echo -e "${GREEN}[1/2] Backend...${NC}"
     cd "$BACKEND_DIR" && npm run dev &
     sleep 3
 
-    # Frontend
     echo -e "${GREEN}[2/2] Frontend...${NC}"
     cd "$FRONTEND_DIR" && npm run dev &
     sleep 5
 
     echo ""
     echo -e "${CYAN}   Frontend : http://localhost:5173${NC}"
-    echo -e "${CYAN}   Backend  : http://localhost:5000${NC}"
+    echo -e "${CYAN}   Backend  : http://localhost:3000${NC}"
     echo ""
     command -v xdg-open &>/dev/null && xdg-open "http://localhost:5173" 2>/dev/null || true
     command -v open &>/dev/null && open "http://localhost:5173" 2>/dev/null || true
@@ -50,12 +47,11 @@ if [ "${1:-}" = "--dev" ]; then
     echo -e "${GREEN}✓ Serveurs démarrés — Ctrl+C pour arrêter${NC}"
     wait
 
-# ── Mode PRODUCTION (winicari.tn/sicam) — PAR DÉFAUT ──
+# ── Mode PRODUCTION (winicari.tn:3000) — PAR DÉFAUT ──
 else
-    echo -e "${YELLOW}Mode Production — winicari.tn/sicam${NC}"
+    echo -e "${YELLOW}Mode Production — http://winicari.tn:3000${NC}"
     echo ""
 
-    # Vérifier .env
     if [ ! -f "$BACKEND_DIR/.env" ]; then
         echo -e "${RED}Erreur : backend/.env introuvable${NC}"
         echo -e "${YELLOW}Créez-le : cp backend/.env.example backend/.env${NC}"
@@ -63,20 +59,17 @@ else
         exit 1
     fi
 
-    # Installer dépendances + PM2
     echo -e "${GREEN}[1/3] Installation...${NC}"
     [ ! -d "$BACKEND_DIR/node_modules" ] && cd "$BACKEND_DIR" && npm install --production
     [ ! -d "$FRONTEND_DIR/node_modules" ] && cd "$FRONTEND_DIR" && npm install
     command -v pm2 &>/dev/null || npm install -g pm2
 
-    # Build frontend
     echo -e "${GREEN}[2/3] Build du frontend...${NC}"
     cd "$FRONTEND_DIR" && npm run build
-    echo -e "${GREEN}✓ Frontend build OK — dossier frontend/dist/${NC}"
+    echo -e "${GREEN}✓ Frontend build OK${NC}"
     echo ""
 
-    # Démarrer backend avec PM2
-    echo -e "${GREEN}[3/3] Démarrage du backend...${NC}"
+    echo -e "${GREEN}[3/3] Démarrage du backend (port 3000)...${NC}"
     cd "$BACKEND_DIR"
     if pm2 list 2>/dev/null | grep -q "sicamagri-api"; then
         pm2 restart sicamagri-api --env production
@@ -87,17 +80,15 @@ else
     echo -e "${GREEN}✓ Backend lancé avec PM2${NC}"
     echo ""
 
-    # Résumé
     echo -e "${CYAN}═══════════════════════════════════════${NC}"
-    echo -e "${CYAN}   Site : http://winicari.tn/sicam     ${NC}"
-    echo -e "${CYAN}   API  : http://winicari.tn/sicam/api ${NC}"
+    echo -e "${CYAN}   Site : http://winicari.tn:3000      ${NC}"
+    echo -e "${CYAN}   API  : http://winicari.tn:3000/api  ${NC}"
     echo -e "${CYAN}═══════════════════════════════════════${NC}"
     echo ""
-    echo -e "${YELLOW}Commande admin : pm2 stop sicamagri-api${NC}"
-    echo -e "${YELLOW}Logs          : pm2 logs sicamagri-api${NC}"
+    echo -e "${YELLOW}Arrêter  : pm2 stop sicamagri-api${NC}"
+    echo -e "${YELLOW}Logs     : pm2 logs sicamagri-api${NC}"
     echo ""
 
-    # Ouvrir le navigateur si possible
-    command -v xdg-open &>/dev/null && xdg-open "http://winicari.tn/sicam" 2>/dev/null || true
-    command -v open &>/dev/null && open "http://winicari.tn/sicam" 2>/dev/null || true
+    command -v xdg-open &>/dev/null && xdg-open "http://winicari.tn:3000" 2>/dev/null || true
+    command -v open &>/dev/null && open "http://winicari.tn:3000" 2>/dev/null || true
 fi

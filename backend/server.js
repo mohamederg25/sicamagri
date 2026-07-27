@@ -20,6 +20,7 @@
  */
 
 const express = require('express');
+const path = require('path');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
@@ -45,7 +46,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       imgSrc: ["'self'", 'data:', 'blob:'],
-      connectSrc: ["'self'", 'http://localhost:5000', 'ws://localhost:5000'],
+      connectSrc: ["'self'", 'http://localhost:3000', 'ws://localhost:3000', 'http://localhost:5000'],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
     },
   },
@@ -102,6 +103,17 @@ app.use('/api/stock', require('./routes/stockRoutes'));                // Stock 
 app.use('/api/fournisseurs', require('./routes/fournisseurRoutes'));    // Fournisseurs (suppliers)
 
 
+// ── Servir le frontend buildé en production ──
+if (process.env.NODE_ENV === 'production') {
+  const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
+  app.use(express.static(frontendDist));
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api/')) {
+      res.sendFile(path.join(frontendDist, 'index.html'));
+    }
+  });
+}
+
 //  Centralized Error Handler (MUST be after all routes) 
 const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
@@ -129,7 +141,7 @@ process.on('SIGINT', async () => {
 const server = http.createServer(app);
 initSocketIO(server);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
   console.log(`WebSocket server ready for real-time notifications`);
