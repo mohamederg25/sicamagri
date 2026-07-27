@@ -55,7 +55,7 @@ cd sicamagri
 ```bash
 ./start.sh
 ```
-→ Auto-seed la base, build le frontend, démarre le backend sur **http://winicari.tn:3000**
+→ Auto-seed la base, build le frontend, démarre le backend sur **http://VOTRE-DOMAINE:3000**
 
 ---
 
