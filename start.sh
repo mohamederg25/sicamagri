@@ -39,7 +39,7 @@ if [ "${1:-}" = "--dev" ]; then
 
     echo ""
     echo -e "${CYAN}   Frontend : http://localhost:5173${NC}"
-    echo -e "${CYAN}   Backend  : http://localhost:3000${NC}"
+    echo -e "${CYAN}   Backend  : http://localhost:5000${NC}"
     echo ""
     command -v xdg-open &>/dev/null && xdg-open "http://localhost:5173" 2>/dev/null || true
     command -v open &>/dev/null && open "http://localhost:5173" 2>/dev/null || true
@@ -47,9 +47,9 @@ if [ "${1:-}" = "--dev" ]; then
     echo -e "${GREEN}✓ Serveurs démarrés — Ctrl+C pour arrêter${NC}"
     wait
 
-# ── Mode PRODUCTION (winicari.tn:3000) — PAR DÉFAUT ──
+# ── Mode PRODUCTION (winicari.tn:5000) — PAR DÉFAUT ──
 else
-    echo -e "${YELLOW}Mode Production — http://winicari.tn:3000${NC}"
+    echo -e "${YELLOW}Mode Production — http://winicari.tn:5000${NC}"
     echo ""
 
     if [ ! -f "$BACKEND_DIR/.env" ]; then
@@ -87,7 +87,7 @@ else
     echo -e "${GREEN}✓ Frontend build OK${NC}"
     echo ""
 
-    echo -e "${GREEN}[4/4] Démarrage du backend (port 3000)...${NC}"
+    echo -e "${GREEN}[4/4] Démarrage du backend (port 5000)...${NC}"
     cd "$BACKEND_DIR"
     npm start &
     BACKEND_PID=$!
@@ -96,20 +96,20 @@ else
     echo ""
 
     echo -e "${CYAN}═══════════════════════════════════════${NC}"
-    echo -e "${CYAN}   Site : http://winicari.tn:3000      ${NC}"
-    echo -e "${CYAN}   API  : http://winicari.tn:3000/api  ${NC}"
+    echo -e "${CYAN}   Site : http://winicari.tn:5000      ${NC}"
+    echo -e "${CYAN}   API  : http://winicari.tn:5000/api  ${NC}"
     echo -e "${CYAN}═══════════════════════════════════════${NC}"
     echo ""
     echo -e "${YELLOW}Arrêter  : kill $BACKEND_PID${NC}"
     echo -e "${YELLOW}Logs     : les logs sont dans le terminal${NC}"
     echo ""
 
-    command -v xdg-open &>/dev/null && xdg-open "http://winicari.tn:3000" 2>/dev/null || true
-    command -v open &>/dev/null && open "http://winicari.tn:3000" 2>/dev/null || true
+    command -v xdg-open &>/dev/null && xdg-open "http://winicari.tn:5000" 2>/dev/null || true
+    command -v open &>/dev/null && open "http://winicari.tn:5000" 2>/dev/null || true
 
     # Garder le script en vie
     wait $BACKEND_PID
 
-    command -v xdg-open &>/dev/null && xdg-open "http://winicari.tn:3000" 2>/dev/null || true
-    command -v open &>/dev/null && open "http://winicari.tn:3000" 2>/dev/null || true
+    command -v xdg-open &>/dev/null && xdg-open "http://winicari.tn:5000" 2>/dev/null || true
+    command -v open &>/dev/null && open "http://winicari.tn:5000" 2>/dev/null || true
 fi

@@ -3,7 +3,7 @@
  * =================
  *
  * Pre-configured Axios instance shared across all pages.
- * - baseURL: points to the Express backend at localhost:3000
+ * - baseURL: points to the Express backend at localhost:5000
  * - withCredentials: true — sends httpOnly cookies (JWT) with every request
  *
  * Usage:
@@ -17,7 +17,7 @@
 import axios from 'axios';
 
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3000/api'),
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api'),
   withCredentials: true,
 });
 

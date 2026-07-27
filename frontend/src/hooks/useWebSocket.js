@@ -19,7 +19,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { playCriticalAlert, playWarningAlert } from '../utils/notificationSound';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 
 /* ── Save original page title on first import ── */
 const ORIGINAL_TITLE = document.title;
