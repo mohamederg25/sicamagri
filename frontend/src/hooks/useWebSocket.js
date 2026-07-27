@@ -35,6 +35,7 @@ const useWebSocket = (userId) => {
     // Always create a connection — no auth required at socket level
     // (JWT is httpOnly; anomaly data is already public via REST API)
     const socket = io(SOCKET_URL, {
+      path: import.meta.env.PROD ? '/sicam/socket.io' : '/socket.io',
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,

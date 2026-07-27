@@ -254,19 +254,20 @@ sicamagri/
 
 ## ☁️ Déploiement
 
-### Option 1 : Apache / Serveur Ubuntu (Reverse Proxy)
+### Option 1 : Apache / Serveur Ubuntu — sous-dossier `/sicam`
+
+> ⚠️ Cette configuration est pour un déploiement dans un sous-dossier `www.winicari.tn/sicam`
 
 #### Architecture
 
 ```
-Utilisateur ──► Apache (port 80/443)
+Utilisateur ──► Apache (port 80)
                    │
-                   ├───► / (fichiers statiques React depuis frontend/dist/)
+                   ├───► www.winicari.tn/ (site existant)
                    │
-                   └───► /api/* ──► Reverse Proxy ──► Node.js (port 5000)
-                   └───► /socket.io/* ──► Proxy WebSocket ──► Node.js (port 5000)
-                                                             │
-                                                             └───► MongoDB
+                   └───► /sicam/ (React depuis frontend/dist/)
+                   └───► /sicam/api/* ──► Reverse Proxy ──► Node.js (port 5000)
+                   └───► /sicam/socket.io/* ──► Proxy WebSocket ──► Node.js
 ```
 
 #### 1. Installer Node.js et PM2
@@ -290,46 +291,44 @@ npm install --production
 cp .env.example .env
 nano .env   # Configurer MONGO_URI, JWT_SECRET, CORS_ORIGIN, NODE_ENV=production
 
-# Frontend
+# Frontend (le build utilise automatiquement /sicam/ comme base)
 cd ../frontend
 npm install
-npm run build    # Génère frontend/dist/
+npm run build    # Génère frontend/dist/ avec des chemins /sicam/...
 ```
 
 #### 3. Configurer Apache
 
-Créez ou modifiez le VirtualHost :
+Éditez le VirtualHost existant de `www.winicari.tn` et ajoutez ceci DANS le `<VirtualHost *:80>` :
 
 ```apache
-<VirtualHost *:80>
-    ServerName votre-domaine.tn
-    DocumentRoot /var/www/sicamagri/frontend/dist
-
+    # ── SICAM AGRI - sous-dossier /sicam ──
+    Alias /sicam /var/www/sicamagri/frontend/dist
     <Directory /var/www/sicamagri/frontend/dist>
         Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
-        FallbackResource /index.html        # React Router
     </Directory>
 
-    # Reverse Proxy vers Node.js
+    # React Router - toutes les routes /sicam/... → index.html
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^/sicam/ /sicam/index.html [L]
+
+    # Reverse Proxy vers l'API Node.js
     ProxyRequests Off
     ProxyPreserveHost On
-    ProxyPass /api/ http://localhost:5000/api/
-    ProxyPassReverse /api/ http://localhost:5000/api/
+    ProxyPass /sicam/api/ http://localhost:5000/api/
+    ProxyPassReverse /sicam/api/ http://localhost:5000/api/
 
     # WebSocket
-    ProxyPass /socket.io/ ws://localhost:5000/socket.io/
-    ProxyPassReverse /socket.io/ ws://localhost:5000/socket.io/
-
-    ErrorLog ${APACHE_LOG_DIR}/sicamagri-error.log
-    CustomLog ${APACHE_LOG_DIR}/sicamagri-access.log combined
-</VirtualHost>
+    ProxyPass /sicam/socket.io/ ws://localhost:5000/socket.io/
+    ProxyPassReverse /sicam/socket.io/ ws://localhost:5000/socket.io/
 ```
 
 ```bash
-sudo a2enmod proxy proxy_http proxy_wstunnel rewrite
-sudo a2ensite votre-domaine.tn.conf
+sudo a2enmod proxy proxy_http proxy_wstunnel rewrite alias
 sudo systemctl reload apache2
 ```
 
@@ -341,21 +340,16 @@ pm2 start server.js --name sicamagri-api --env production
 pm2 save && pm2 startup
 ```
 
-#### 5. MongoDB
+#### 5. MongoDB & HTTPS
 
-**Local :**
 ```bash
+# MongoDB local
 sudo apt-get install -y mongodb-org
 sudo systemctl start mongod && sudo systemctl enable mongod
-```
 
-**Atlas (gratuit) :** Créez un cluster sur [MongoDB Atlas](https://www.mongodb.com/atlas)
-
-#### 6. HTTPS (Let's Encrypt)
-
-```bash
+# HTTPS
 sudo apt-get install -y certbot python3-certbot-apache
-sudo certbot --apache -d votre-domaine.tn
+sudo certbot --apache -d www.winicari.tn
 ```
 
 ---
