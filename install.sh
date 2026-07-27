@@ -82,25 +82,15 @@ else
 fi
 echo ""
 
-# ── 4. PM2 ──
-echo -e "${YELLOW}[4/5] Installation de PM2...${NC}"
-if command -v pm2 &> /dev/null; then
-    echo -e "${GREEN}✓ PM2 déjà installé${NC}"
-else
-    npm install -g pm2
-    echo -e "${GREEN}✓ PM2 installé${NC}"
-fi
-echo ""
-
-# ── 5. Vérification ──
-echo -e "${YELLOW}[5/5] Vérification finale...${NC}"
+# ── 4. Vérification ──
+echo -e "${YELLOW}[4/4] Vérification finale...${NC}"
 echo ""
 echo -e "${CYAN}═══════════════════════════════════════${NC}"
 echo -e "${CYAN}   État des services                  ${NC}"
 echo -e "${CYAN}═══════════════════════════════════════${NC}"
 echo -e "Node.js  : $(node --version)"
 echo -e "npm      : $(npm --version)"
-echo -e "PM2      : $(pm2 --version 2>/dev/null || echo '✓ installé')"
+
 systemctl is-active --quiet mongod && echo -e "MongoDB  : ${GREEN}✓ actif${NC}" || echo -e "MongoDB  : ${RED}✗ inactif${NC}"
 echo ""
 

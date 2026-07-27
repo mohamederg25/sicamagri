@@ -62,11 +62,9 @@ else
     echo -e "${GREEN}[1/3] Installation...${NC}"
     [ ! -d "$BACKEND_DIR/node_modules" ] && cd "$BACKEND_DIR" && npm install --production
     [ ! -d "$FRONTEND_DIR/node_modules" ] && cd "$FRONTEND_DIR" && npm install
-    command -v pm2 &>/dev/null || npm install -g pm2
 
     echo -e "${GREEN}[2/4] Seed de la base de données...${NC}"
     cd "$BACKEND_DIR"
-    # Vérifier si la base est déjà seedée (si admin existe, on ne seed pas)
     node -e "
       const mongoose = require('mongoose');
       require('dotenv').config();
@@ -80,7 +78,7 @@ else
     if [ $SEED_EXIT_CODE -eq 42 ]; then
         echo -e "${YELLOW}Création des données initiales...${NC}"
         cd "$BACKEND_DIR" && node scripts/seed.js
-        echo -e "${GREEN}✓ Base de données initialisée avec succès${NC}"
+        echo -e "${GREEN}✓ Base de données initialisée${NC}"
     fi
     echo ""
 
@@ -91,13 +89,10 @@ else
 
     echo -e "${GREEN}[4/4] Démarrage du backend (port 3000)...${NC}"
     cd "$BACKEND_DIR"
-    if pm2 list 2>/dev/null | grep -q "sicamagri-api"; then
-        pm2 restart sicamagri-api --env production
-    else
-        pm2 start server.js --name sicamagri-api --env production
-        pm2 save && pm2 startup
-    fi
-    echo -e "${GREEN}✓ Backend lancé avec PM2${NC}"
+    npm start &
+    BACKEND_PID=$!
+    sleep 2
+    echo -e "${GREEN}✓ Backend démarré (PID: $BACKEND_PID)${NC}"
     echo ""
 
     echo -e "${CYAN}═══════════════════════════════════════${NC}"
@@ -105,9 +100,15 @@ else
     echo -e "${CYAN}   API  : http://winicari.tn:3000/api  ${NC}"
     echo -e "${CYAN}═══════════════════════════════════════${NC}"
     echo ""
-    echo -e "${YELLOW}Arrêter  : pm2 stop sicamagri-api${NC}"
-    echo -e "${YELLOW}Logs     : pm2 logs sicamagri-api${NC}"
+    echo -e "${YELLOW}Arrêter  : kill $BACKEND_PID${NC}"
+    echo -e "${YELLOW}Logs     : les logs sont dans le terminal${NC}"
     echo ""
+
+    command -v xdg-open &>/dev/null && xdg-open "http://winicari.tn:3000" 2>/dev/null || true
+    command -v open &>/dev/null && open "http://winicari.tn:3000" 2>/dev/null || true
+
+    # Garder le script en vie
+    wait $BACKEND_PID
 
     command -v xdg-open &>/dev/null && xdg-open "http://winicari.tn:3000" 2>/dev/null || true
     command -v open &>/dev/null && open "http://winicari.tn:3000" 2>/dev/null || true
