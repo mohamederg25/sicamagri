@@ -71,24 +71,22 @@ if [ "$MODE" = "--prod" ]; then
     echo -e "${GREEN}[2/3] Démarrage du backend...${NC}"
     cd "$BACKEND_DIR"
 
-    # Vérifier si déjà lancé avec PM2
-    if command -v pm2 &> /dev/null; then
-        if pm2 list | grep -q "sicamagri-api"; then
-            echo -e "${YELLOW}Redémarrage du backend via PM2...${NC}"
-            pm2 restart sicamagri-api
-        else
-            echo -e "${YELLOW}Lancement du backend via PM2...${NC}"
-            pm2 start server.js --name sicamagri-api --env production
-            pm2 save
-        fi
-        echo -e "${GREEN}✓ Backend lancé avec PM2 (s'arrête jamais)${NC}"
-    else
-        # Fallback: npm start en arrière-plan
-        echo -e "${YELLOW}PM2 non installé. Lancement avec npm start...${NC}"
-        npm start &
-        BACKEND_PID=$!
-        echo -e "${GREEN}✓ Backend démarré (PID: $BACKEND_PID)${NC}"
+    # Installer PM2 si pas encore installé
+    if ! command -v pm2 &> /dev/null; then
+        echo -e "${YELLOW}Installation de PM2...${NC}"
+        npm install -g pm2
     fi
+
+    if pm2 list 2>/dev/null | grep -q "sicamagri-api"; then
+        echo -e "${YELLOW}Redémarrage du backend via PM2...${NC}"
+        pm2 restart sicamagri-api --env production
+    else
+        echo -e "${YELLOW}Lancement du backend via PM2...${NC}"
+        pm2 start server.js --name sicamagri-api --env production
+        pm2 save
+        pm2 startup
+    fi
+    echo -e "${GREEN}✓ Backend lancé avec PM2 (redémarrage automatique)${NC}"
     echo ""
 
     # Résumé
