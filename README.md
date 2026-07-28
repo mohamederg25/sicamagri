@@ -283,7 +283,7 @@ sicamagri/
 **PEP — Pépinière Management System**  
 Built with ❤️ for agricultural professionals
 
-📧 **Email:** [erguiba.mohamed@outlook.com](mailto:erguiba.mohamed@outlook.com)  
+📧 **Email:** [mohamed.erguez@gmail.com](mailto:mohamed.erguez@gmail.com)  
 🐙 **GitHub:** [@mohamederg25](https://github.com/mohamederg25)  
 📄 **License:** MIT — see [LICENSE](LICENSE)
 
