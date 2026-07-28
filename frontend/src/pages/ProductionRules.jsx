@@ -322,7 +322,7 @@ const ProductionRules = () => {
               const day = formData.startDate ? formData.startDate.split('-')[2] || '1' : '1';
               setFormData({ ...formData, startDate: `2000-${month}-${day.padStart(2, '0')}` });
             }}
-            style={selectStyle}
+            style={inputStyle}
           >
             <option value="">Mois</option>
             {[
@@ -355,7 +355,7 @@ const ProductionRules = () => {
               const month = formData.startDate ? formData.startDate.split('-')[1] || '01' : '01';
               setFormData({ ...formData, startDate: `2000-${month}-${e.target.value.padStart(2, '0')}` });
             }}
-            style={selectStyle}
+            style={inputStyle}
           >
             <option value="">Jour</option>
             {Array.from({ length: 31 }, (_, i) => {
@@ -380,7 +380,7 @@ const ProductionRules = () => {
               const day = formData.endDate ? formData.endDate.split('-')[2] || '1' : '1';
               setFormData({ ...formData, endDate: `2000-${month}-${day.padStart(2, '0')}` });
             }}
-            style={selectStyle}
+            style={inputStyle}
           >
             <option value="">Mois</option>
             {[
@@ -413,7 +413,7 @@ const ProductionRules = () => {
               const month = formData.endDate ? formData.endDate.split('-')[1] || '01' : '01';
               setFormData({ ...formData, endDate: `2000-${month}-${e.target.value.padStart(2, '0')}` });
             }}
-            style={selectStyle}
+            style={inputStyle}
           >
             <option value="">Jour</option>
             {Array.from({ length: 31 }, (_, i) => {

@@ -108,7 +108,7 @@ app.use('/api/fournisseurs', require('./routes/fournisseurRoutes'));    // Fourn
 if (process.env.NODE_ENV === 'production') {
   const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
   app.use(express.static(frontendDist));
-  app.get('*', (req, res) => {
+  app.get('/{*path}', (req, res) => {
     if (!req.path.startsWith('/api/')) {
       res.sendFile(path.join(frontendDist, 'index.html'));
     }
