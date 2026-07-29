@@ -1,0 +1,146 @@
+╔══════════════════════════════════════════════════════════════╗
+║             INSTRUCTIONS DE DEPLOIEMENT                     ║
+║     Nouvelle fonctionnalité : Facture PDF                   ║
+║     SICAM AGRI - Juillet 2026                               ║
+╚══════════════════════════════════════════════════════════════╝
+
+
+═══════════════════════════════════════════════════════════════
+  RESUME DES CHANGEMENTS
+═══════════════════════════════════════════════════════════════
+
+Un bouton "Facture PDF" a ete ajoute pour generer automatiquement
+une facture professionnelle au format PDF lors des sorties de stock :
+
+  • Sortie pepiniere  → Bon de sortie pepiniere (code semis, variete,
+                         pepiniere destination, quantite, taux germination)
+
+  • Bon de passage / Sortie externe → Facture / Bon de passage
+                         (reference, variete, motif, quantite)
+
+Le PDF genere contient :
+  - En-tete SICAM AGRI avec bandeaux rouges/verts
+  - Numero de facture / Reference
+  - Date, createur, destination
+  - Tableau des informations detaillees
+  - Encadre recapitulatif avec le total
+  - Pied de page professionnel
+
+
+═══════════════════════════════════════════════════════════════
+  FICHIERS MODIFIES (5 fichiers)
+═══════════════════════════════════════════════════════════════
+
+NOUVEAU FICHIER :
+  frontend/src/utils/invoicePDF.js
+  → Moteur de generation PDF (jsPDF)
+  → Contient generateSemisInvoice() et generateBonPassageInvoice()
+
+NOUVEAU FICHIER :
+  CHANGELOG-FACTURE-PDF.md
+  → Journal des modifications et documentation
+
+FICHIER MODIFIE :
+  frontend/src/pages/StockSemenceDetail.jsx
+  → Bouton "Facture PDF" ajoute sur chaque mouvement
+    (sortie_pepiniere et bon_passage) dans l'historique
+
+FICHIER MODIFIE :
+  frontend/src/pages/SemisDetail.jsx
+  → Bouton "Telecharger la facture PDF" ajoute dans les actions
+
+FICHIER MODIFIE :
+  frontend/src/pages/SortiesExternes.jsx
+  → Nouvelle colonne "Facture" avec bouton PDF par ligne
+
+
+═══════════════════════════════════════════════════════════════
+  INSTRUCTIONS DE DEPLOIEMENT
+═══════════════════════════════════════════════════════════════
+
+ETAPE 1 - Recuperer les fichiers sur le serveur
+
+  Option A - Via Git (recommandee) :
+  --------------------------------
+    1. Connectez-vous au serveur (SSH)
+    2. Allez dans le dossier du projet :
+       cd /chemin/vers/sicam-agri
+    3. Recuperez les dernieres modifications :
+       git pull origin master
+
+  Option B - Manuellement :
+  ------------------------
+    1. Copiez les 5 fichiers modifies dans leurs dossiers respectifs
+       sur le serveur (voir la liste ci-dessus)
+
+
+ETAPE 2 - Installer les dependances (si necessaire)
+
+  Les packages jspdf et jspdf-autotable sont deja dans package.json.
+  Pour verifier :
+     cd frontend
+     npm install
+
+  Si erreur : npm install jspdf jspdf-autotable
+
+
+ETAPE 3 - Reconstruire le frontend
+
+  cd frontend
+  npm run build
+  (ou : npx vite build)
+
+
+ETAPE 4 - Redemarrer le backend
+
+  Option A - Avec PM2 :
+     pm2 restart all
+
+  Option B - Avec systemd :
+     systemctl restart sicam-agri
+
+  Option C - Manuellement :
+     Ctrl+C puis node server.js
+
+
+ETAPE 5 - Verifier le bon fonctionnement
+
+  Rendez-vous sur l'application web et testez :
+
+  1. Stock de semences → cliquer sur un stock
+     → Dans "Historique des mouvements"
+     → Cliquer sur "Facture PDF" sur un mouvement
+
+  2. Menu Semis → cliquer sur un semis
+     → Bouton "Telecharger la facture PDF"
+
+  3. Menu Sorties externes
+     → Cliquer sur le bouton "PDF" dans la colonne Facture
+
+
+═══════════════════════════════════════════════════════════════
+  DEPANNAGE
+═══════════════════════════════════════════════════════════════
+
+Probleme : Le PDF ne se genere pas
+Solution : Verifier que jspdf est installe :
+           cd frontend && npm list jspdf
+
+Probleme : Erreur "jsPDF is not a constructor"
+Solution : Mettre a jour jspdf :
+           npm install jspdf@latest jspdf-autotable@latest
+
+Probleme : Les modifications n'apparaissent pas
+Solution : Vider le cache navigateur (Ctrl+F5)
+           Re-executer npm run build
+
+Probleme : Le bouton "Facture PDF" n'apparait pas
+Solution : Verifier que invoicePDF.js est bien dans
+           frontend/src/utils/invoicePDF.js
+
+
+═══════════════════════════════════════════════════════════════
+  CONTACT
+═══════════════════════════════════════════════════════════════
+
+Pour toute question : mohamed.erguez@gmail.com

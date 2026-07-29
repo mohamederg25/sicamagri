@@ -12,7 +12,7 @@ import Loading from '../components/Loading';
 import ExportButton from '../components/ExportButton';
 import { ExternalLink, ArrowUpRight, Calendar, Tag, Sprout, Search, Receipt } from 'lucide-react';
 import semisService from '../services/semisService';
-import { generateBonPassageInvoice } from '../utils/invoicePDF';
+import { generateMovementInvoice } from '../utils/invoicePDF';
 
 const fmtDate = (d) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 const fmtNumber = (n) => (n != null ? n.toLocaleString('fr-FR') : '—');
@@ -420,10 +420,11 @@ const SortiesExternes = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Build a mouvement-like object from the semis data
-                        generateBonPassageInvoice(
+                        generateMovementInvoice(
+                          'bon_passage',
                           {
                             referenceBon: s.code || '—',
+                            code: s.code || '—',
                             quantite: s.quantite,
                             motif: s.motif || 'Sortie externe',
                             dateMouvement: s.createdAt,

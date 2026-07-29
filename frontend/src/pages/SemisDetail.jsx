@@ -6,7 +6,7 @@ import Modal from '../components/common/Modal';
 import lotService from '../services/lotService';
 import semisService from '../services/semisService';
 import pepiniereService from '../services/pepiniereService';
-import { generateSemisInvoice } from '../utils/invoicePDF';
+import { generateMovementInvoice } from '../utils/invoicePDF';
 
 const inputStyle = {
   width: '100%',
@@ -138,9 +138,32 @@ const SemisDetail = () => {
     }
     try {
       setTransferLoading(true);
-      await semisService.transfer(id, transferForm);
+      const { data: transferResult } = await semisService.transfer(id, transferForm);
       setTransferModalOpen(false);
       fetchSemis();
+      // ── Auto-generate facture after successful transfer ──
+      if (transferResult?.destinationSemis) {
+        const dest = transferResult.destinationSemis;
+        generateMovementInvoice(
+          'sortie_pepiniere',
+          {
+            code: dest.code,
+            referenceBon: dest.code,
+            quantite: dest.quantite,
+            motif: 'Transféré depuis ' + (semis?.pepiniere?.nom || 'source'),
+            dateMouvement: new Date(),
+            createdBy: { nom: user?.nom || 'Système' },
+            pepiniere: dest.pepiniere,
+            semisCree: { code: dest.code },
+          },
+          {
+            code: dest.code,
+            variete: dest.variete,
+            fournisseur: null,
+            tauxGermination: dest.tauxGermination,
+          }
+        );
+      }
     } catch (error) {
       setTransferError(error?.response?.data?.message || 'Erreur lors du transfert');
     } finally {
@@ -356,7 +379,23 @@ const SemisDetail = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {/* ── Facture PDF button (always visible) ── */}
             <button
-              onClick={() => generateSemisInvoice(semis)}
+              onClick={() => {
+                const mouvement = {
+                  code: semis.code,
+                  referenceBon: semis.code,
+                  quantite: semis.quantite,
+                  motif: semis.motif,
+                  dateMouvement: semis.createdAt,
+                  createdBy: semis.createdBy,
+                  pepiniere: semis.pepiniere,
+                };
+                generateMovementInvoice(semis.type === 'externe' ? 'bon_passage' : 'sortie_pepiniere', mouvement, {
+                  code: semis.code,
+                  variete: semis.variete,
+                  fournisseur: null,
+                  tauxGermination: semis.tauxGermination,
+                });
+              }}
               style={{
                 width: '100%',
                 padding: '12px',

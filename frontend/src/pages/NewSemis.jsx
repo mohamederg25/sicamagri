@@ -6,7 +6,8 @@ import semisService from '../services/semisService';
 import pepiniereService from '../services/pepiniereService';
 import stockService from '../services/stockService';
 
-import { TestTube, ArrowRight, ExternalLink } from 'lucide-react';
+import { TestTube, ArrowRight, ExternalLink, Receipt } from 'lucide-react';
+import { generateMovementInvoice } from '../utils/invoicePDF';
 
 const NewSemis = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const NewSemis = () => {
   const [stockList, setStockList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [successData, setSuccessData] = useState(null); // { type, mouvement, stock } for facture after creation
 
   // Pre-selected stock from URL params (e.g., ?stockId=XXX)
   const preselectedStockId = searchParams.get('stockId') || '';
@@ -120,13 +122,29 @@ const NewSemis = () => {
     try {
       if (formData.type === 'externe') {
         // ── Sortie externe : utilise l'API mouvement (bon_passage) → pas de Semis créé ──
-        await stockService.createMovement(formData.stockRef, {
+        const { data: mouvementResult } = await stockService.createMovement(formData.stockRef, {
           type: 'bon_passage',
           quantite: quantite,
           motif: formData.motif,
           dateMouvement: new Date().toISOString().split('T')[0],
         });
-        navigate('/stock');
+        // Show facture download for bon externe
+        setSuccessData({
+          type: 'bon_passage',
+          mouvement: {
+            ...mouvementResult,
+            referenceBon: mouvementResult.referenceBon || 'BP-' + new Date().toISOString().slice(0,7),
+            quantite,
+            motif: formData.motif,
+            dateMouvement: new Date(),
+            createdBy: { nom: user?.nom || '' },
+          },
+          stock: {
+            code: selectedStock.code,
+            variete: selectedStock.variete,
+            fournisseur: selectedStock.fournisseur,
+          },
+        });
       } else {
         // ── Sortie pépinière : crée un Semis + mouvement ──
         const payload = {
@@ -138,8 +156,27 @@ const NewSemis = () => {
           stockRef: formData.stockRef,
           pepiniere: formData.pepiniere,
         };
-        await semisService.create(payload);
-        navigate('/semis');
+        const { data: createdSemis } = await semisService.create(payload);
+        // Show facture download for creation de semis
+        setSuccessData({
+          type: 'sortie_pepiniere',
+          mouvement: {
+            code: createdSemis.code,
+            referenceBon: createdSemis.code,
+            quantite,
+            motif: 'Sortie en pépinière',
+            dateMouvement: new Date(),
+            createdBy: { nom: user?.nom || '' },
+            pepiniere: { nom: pepinieres.find(p => p._id === formData.pepiniere)?.nom || '' },
+            semisCree: { code: createdSemis.code },
+          },
+          stock: {
+            code: selectedStock.code,
+            variete: selectedStock.variete,
+            fournisseur: selectedStock.fournisseur,
+            tauxGermination: selectedStock.tauxGermination,
+          },
+        });
       }
     } catch (error) {
       console.error(error);
@@ -156,6 +193,75 @@ const NewSemis = () => {
   }, [stockList]);
 
   if (loading) return <Loading />;
+
+  // ── Success state with facture download ──
+  if (successData) {
+    return (
+      <div style={{ maxWidth: '560px', margin: '0 auto', textAlign: 'center' }}>
+        <div style={{
+          backgroundColor: 'white',
+          border: '2px solid #22c55e',
+          borderRadius: '20px',
+          padding: '48px 32px',
+          marginTop: '40px',
+        }}>
+          <div style={{
+            width: '72px', height: '72px', borderRadius: '50%',
+            backgroundColor: '#dcfce7', color: '#008030',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 20px', fontSize: '36px',
+          }}>✓</div>
+          <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#008030', margin: '0 0 8px' }}>
+            Opération réussie !
+          </h2>
+          <p style={{ fontSize: '15px', color: '#111111', margin: '0 0 28px' }}>
+            {successData.type === 'bon_passage'
+              ? 'La sortie externe a été créée avec succès.'
+              : 'Le semis a été créé avec succès.'}
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+              onClick={() => {
+                generateMovementInvoice(
+                  successData.type,
+                  successData.mouvement,
+                  successData.stock
+                );
+              }}
+              style={{
+                width: '100%', padding: '14px',
+                backgroundColor: '#B02020', color: 'white',
+                border: 'none', borderRadius: '10px',
+                fontSize: '16px', fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                fontFamily: 'inherit',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#8A1A1A'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#B02020'}
+            >
+              <Receipt size={18} />
+              Télécharger la facture PDF
+            </button>
+
+            <button
+              onClick={() => navigate('/stock')}
+              style={{
+                width: '100%', padding: '14px',
+                backgroundColor: '#f3f4f6', color: '#111111',
+                border: '1px solid #d1d5db', borderRadius: '10px',
+                fontSize: '16px', fontWeight: 500,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Retour au stock
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '720px', margin: '0 auto' }}>

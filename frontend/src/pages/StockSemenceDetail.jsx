@@ -16,7 +16,7 @@ import Modal from '../components/common/Modal';
 import stockService from '../services/stockService';
 import pepiniereService from '../services/pepiniereService';
 import ExportButton from '../components/ExportButton';
-import { generateSemisInvoice, generateBonPassageInvoice } from '../utils/invoicePDF';
+import { generateMovementInvoice } from '../utils/invoicePDF';
 import { Warehouse, Sprout, FileText, ArrowLeft, Calendar, User, Package, BarChart3, TestTube, FlaskConical, Lock, Receipt } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -659,67 +659,48 @@ const StockSemenceDetail = () => {
                       Par: {m.createdBy?.nom || 'Système'}
                     </div>
                   </div>
-                  {/* ── Facture PDF button ── */}
-                  {(m.type === 'sortie_pepiniere' || m.type === 'bon_passage') && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (m.type === 'sortie_pepiniere') {
-                          // Build a semis-like object from the movement data
-                          const semisData = {
-                            code: m.semisCree?.code || '—',
-                            variete: stock.variete,
-                            pepiniere: m.pepiniere,
-                            quantite: m.quantite,
-                            tauxGermination: tauxGermination,
-                            createdAt: m.dateMouvement,
-                            createdBy: m.createdBy,
-                            motif: m.motif,
-                          };
-                          generateSemisInvoice(semisData, {
-                            code: stock.code,
-                            fournisseur: stock.fournisseur,
-                            quantiteRestante: stock.quantiteRestante,
-                          });
-                        } else {
-                          generateBonPassageInvoice(m, {
-                            code: stock.code,
-                            variete: stock.variete,
-                            fournisseur: stock.fournisseur,
-                          });
-                        }
-                      }}
-                      title="Télécharger la facture PDF"
-                      style={{
-                        padding: '6px 10px',
-                        backgroundColor: 'white',
-                        color: '#B02020',
-                        border: '1px solid #fecaca',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        fontFamily: 'inherit',
-                        flexShrink: 0,
-                        transition: 'all 0.15s ease',
-                        marginLeft: '8px',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#B02020';
-                        e.currentTarget.style.color = 'white';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'white';
-                        e.currentTarget.style.color = '#B02020';
-                      }}
-                    >
-                      <Receipt size={14} />
-                      Facture PDF
-                    </button>
-                  )}
+                  {/* ── Facture PDF button — for ALL movement types ── */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      generateMovementInvoice(m.type, m, {
+                        code: stock.code,
+                        variete: stock.variete,
+                        fournisseur: stock.fournisseur,
+                        tauxGermination,
+                        quantiteRestante: stock.quantiteRestante,
+                      });
+                    }}
+                    title="Télécharger la facture PDF"
+                    style={{
+                      padding: '6px 10px',
+                      backgroundColor: 'white',
+                      color: '#B02020',
+                      border: '1px solid #fecaca',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontFamily: 'inherit',
+                      flexShrink: 0,
+                      transition: 'all 0.15s ease',
+                      marginLeft: '8px',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#B02020';
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'white';
+                      e.currentTarget.style.color = '#B02020';
+                    }}
+                  >
+                    <Receipt size={14} />
+                    Facture PDF
+                  </button>
                 </div>
               );
             })}
