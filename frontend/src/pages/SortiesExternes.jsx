@@ -10,8 +10,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Loading from '../components/Loading';
 import ExportButton from '../components/ExportButton';
-import { ExternalLink, ArrowUpRight, Calendar, Tag, Sprout, Search } from 'lucide-react';
+import { ExternalLink, ArrowUpRight, Calendar, Tag, Sprout, Search, Receipt } from 'lucide-react';
 import semisService from '../services/semisService';
+import { generateBonPassageInvoice } from '../utils/invoicePDF';
 
 const fmtDate = (d) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 const fmtNumber = (n) => (n != null ? n.toLocaleString('fr-FR') : '—');
@@ -346,6 +347,7 @@ const SortiesExternes = () => {
                 <th style={{ padding: '14px 20px', fontSize: '12px', fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Quantité</th>
                 <th style={{ padding: '14px 20px', fontSize: '12px', fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Date</th>
                 <th style={{ padding: '14px 20px', fontSize: '12px', fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Actions</th>
+                <th style={{ padding: '14px 20px', fontSize: '12px', fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Facture</th>
               </tr>
             </thead>
             <tbody>
@@ -414,10 +416,59 @@ const SortiesExternes = () => {
                       Détails <ArrowUpRight size={14} />
                     </button>
                   </td>
+                  <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Build a mouvement-like object from the semis data
+                        generateBonPassageInvoice(
+                          {
+                            referenceBon: s.code || '—',
+                            quantite: s.quantite,
+                            motif: s.motif || 'Sortie externe',
+                            dateMouvement: s.createdAt,
+                            createdBy: s.createdBy,
+                          },
+                          {
+                            code: s.code || '—',
+                            variete: s.variete,
+                            fournisseur: null,
+                          }
+                        );
+                      }}
+                      title="Télécharger la facture PDF"
+                      style={{
+                        padding: '6px 10px',
+                        backgroundColor: 'white',
+                        color: '#B02020',
+                        border: '1px solid #fecaca',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontFamily: 'inherit',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#B02020';
+                        e.currentTarget.style.color = 'white';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'white';
+                        e.currentTarget.style.color = '#B02020';
+                      }}
+                    >
+                      <Receipt size={14} />
+                      PDF
+                    </button>
+                  </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="6" style={{ padding: '48px 24px', textAlign: 'center' }}>
+                  <td colSpan="7" style={{ padding: '48px 24px', textAlign: 'center' }}>
                     <p style={{ fontSize: '15px', color: '#111111', margin: 0 }}>
                       {searchTerm || motifFilter !== 'all'
                         ? 'Aucune sortie externe trouvée avec ces filtres.'
